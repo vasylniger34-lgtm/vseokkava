@@ -18,18 +18,26 @@ bot.command('start', async (ctx) => {
   const telegramId = ctx.from?.id.toString();
   if (!telegramId) return;
 
-  let user = await prisma.user.findUnique({
-    where: { telegramId },
-  });
+  console.log(`Received /start from ${telegramId}`);
 
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        telegramId,
-        shortCode: generateShortCode(),
-        name: ctx.from?.first_name || 'Гість',
-      },
+  let user = null;
+  try {
+    user = await prisma.user.findUnique({
+      where: { telegramId },
     });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          telegramId,
+          shortCode: generateShortCode(),
+          name: ctx.from?.first_name || 'Гість',
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Database error in /start:', error);
+    // Continue even if DB is down, just so the bot responds
   }
 
   const webAppUrl = process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://vseokkava.vercel.app';
@@ -48,29 +56,42 @@ bot.command('start', async (ctx) => {
     },
   });
 
-  // If phone is missing, ask for it
-  if (!user.phone) {
+  // If phone is missing and we have user record, ask for it
+  if (user && !user.phone) {
     await ctx.reply('📱 Будь ласка, поділіться номером телефону, щоб ми могли нараховувати вам бонуси.', {
       reply_markup: new Keyboard().requestContact('Поділитися контактом').resized().oneTime(),
     });
   }
 });
 
+bot.command('ping', (ctx) => ctx.reply('Pong! 🏓'));
+
 bot.on('message:contact', async (ctx) => {
   const contact = ctx.message.contact;
   const telegramId = ctx.from?.id.toString();
 
   if (contact && telegramId) {
-    await prisma.user.update({
-      where: { telegramId },
-      data: { phone: contact.phone_number },
-    });
+    try {
+      await prisma.user.update({
+        where: { telegramId },
+        data: { phone: contact.phone_number },
+      });
 
-    await ctx.reply('✅ Дякуємо! Ваш номер збережено. Тепер ви можете користуватися програмою лояльності.', {
-      reply_markup: { remove_keyboard: true },
-    });
+      await ctx.reply('✅ Дякуємо! Ваш номер збережено. Тепер ви можете користуватися програмою лояльності.', {
+        reply_markup: { remove_keyboard: true },
+      });
+    } catch (error) {
+      console.error('Database error in contact handler:', error);
+      await ctx.reply('⚠️ На жаль, сталася помилка при збереженні номера. Спробуйте пізніше.');
+    }
   }
 });
 
+bot.catch((err) => {
+  console.error('GrammY error:', err);
+});
+
 console.log('Bot is starting...');
-bot.start();
+bot.start().catch(err => {
+  console.error('Failed to start bot:', err);
+});
