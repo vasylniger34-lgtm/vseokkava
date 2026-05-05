@@ -1,5 +1,5 @@
 import { Bot, Keyboard } from 'grammy';
-import { prisma } from '../src/lib/db.js';
+import { prisma } from '../lib/db.js';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
