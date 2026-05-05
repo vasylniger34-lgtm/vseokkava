@@ -40,7 +40,7 @@ bot.command('start', async (ctx) => {
     // Continue even if DB is down, just so the bot responds
   }
 
-  const webAppUrl = (process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://vseokkava.vercel.app') + '/app';
+  const webAppUrl = (process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://vseokkava.vercel.app') + '/card';
 
   await ctx.reply(`👋 Вітаємо у **VseOkKava**! ☕️\n\nЦе ваша картка лояльності. Натисніть кнопку нижче, щоб відкрити додаток, переглянути баланс та отримати безкоштовну каву!`, {
     parse_mode: 'Markdown',

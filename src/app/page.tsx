@@ -11,7 +11,7 @@ export default function LandingPage() {
   useEffect(() => {
     // Detect if we are inside Telegram WebApp
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
-      router.replace('/app');
+      router.replace('/card');
     }
   }, [router]);
 
