@@ -2,8 +2,19 @@
 
 import { Coffee, ArrowRight, QrCode, Smartphone, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Detect if we are inside Telegram WebApp
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+      router.replace('/app');
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-[#1c120d] text-[#e6d5c3] selection:bg-[#c18c5d]/30 overflow-hidden">
       {/* Background Decor */}
