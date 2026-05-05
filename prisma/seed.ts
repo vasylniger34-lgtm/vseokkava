@@ -22,5 +22,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    // Adapter/pool will close on process exit or we can manually close if needed
+    await prisma.$disconnect();
   });

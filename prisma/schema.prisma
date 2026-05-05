@@ -25,10 +25,10 @@ model User {
   name       String?
   phone      String?
   birthday   DateTime?
-  shortCode  String  @unique // For entering short code
-  balance    Int     @default(0) // How many coffees currently
-  totalCoffees Int    @default(0) // Lifetime
-  freeCoffees Int     @default(0) // How many free coffees available
+  shortCode  String  @unique
+  balance    Int     @default(0)
+  totalCoffees Int    @default(0)
+  freeCoffees Int     @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -50,8 +50,8 @@ model Transaction {
 
 model Settings {
   id              String @id @default("default")
-  coffeesNeeded   Int    @default(7) // e.g. 7+1
-  reminderDays    Int    @default(7) // remind after 7 days of inactivity
+  coffeesNeeded   Int    @default(7)
+  reminderDays    Int    @default(7)
   reminderText    String @default("Ми сумуємо за вами! Заходьте на каву ☕️")
   trigger6Coffees String @default("Ще одна кава - і наступна безкоштовно! 🎉")
   triggerFree     String @default("Вітаємо! У вас є безкоштовна кава! 🎁")
