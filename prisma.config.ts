@@ -6,5 +6,6 @@ export default defineConfig({
   schema: path.join(import.meta.dirname, "prisma", "schema.prisma"),
   datasource: {
     url: env("DATABASE_URL"),
+    directUrl: env("DIRECT_URL"),
   },
 });
