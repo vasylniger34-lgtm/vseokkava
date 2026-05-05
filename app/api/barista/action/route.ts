@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       where: { telegramId: baristaTelegramId },
     });
 
-    if (!barista || (barista.role !== 'BARISTA' && barista.role !== 'ADMIN')) {
+    if (!barista || (barista.role !== 'BARISTA' && barista.role !== 'OWNER')) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       const freeGained = Math.floor(newBalance / settings.coffeesNeeded);
       const remainingBalance = newBalance % settings.coffeesNeeded;
 
-      await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: { id: targetUserId },
         data: {
           balance: remainingBalance,
@@ -55,13 +55,18 @@ export async function POST(request: Request) {
         },
       });
 
-      return NextResponse.json({ success: true, newBalance: remainingBalance, freeGained });
+      return NextResponse.json({ 
+        success: true, 
+        user: updatedUser,
+        newBalance: remainingBalance, 
+        freeGained 
+      });
     } else if (action === 'REDEEM_FREE') {
       if (targetUser.freeCoffees < 1) {
         return NextResponse.json({ error: 'No free coffees available' }, { status: 400 });
       }
 
-      await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: { id: targetUserId },
         data: {
           freeCoffees: { decrement: 1 },
@@ -77,7 +82,7 @@ export async function POST(request: Request) {
         },
       });
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, user: updatedUser });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

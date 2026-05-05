@@ -7,9 +7,11 @@ dotenv.config();
 const token = process.env.BOT_TOKEN;
 if (!token) throw new Error('BOT_TOKEN is missing');
 
+// Owner username (without @)
+const OWNER_USERNAME = 'wire_code';
+
 const bot = new Bot(token);
 
-// Helper to generate short code
 function generateShortCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -18,7 +20,8 @@ bot.command('start', async (ctx) => {
   const telegramId = ctx.from?.id.toString();
   if (!telegramId) return;
 
-  console.log(`Received /start from ${telegramId}`);
+  const tgUsername = ctx.from?.username?.toLowerCase() || null;
+  console.log(`/start from ${telegramId} (@${tgUsername})`);
 
   let user = null;
   try {
@@ -26,23 +29,42 @@ bot.command('start', async (ctx) => {
       where: { telegramId },
     });
 
+    // Determine role
+    const isOwner = tgUsername === OWNER_USERNAME.toLowerCase();
+
     if (!user) {
       user = await prisma.user.create({
         data: {
           telegramId,
+          username: tgUsername,
           shortCode: generateShortCode(),
           name: ctx.from?.first_name || 'Гість',
+          role: isOwner ? 'OWNER' : 'CLIENT',
         },
       });
+    } else {
+      // Update username and role if needed
+      const updateData: any = {};
+      if (tgUsername && user.username !== tgUsername) {
+        updateData.username = tgUsername;
+      }
+      if (isOwner && user.role !== 'OWNER') {
+        updateData.role = 'OWNER';
+      }
+      if (Object.keys(updateData).length > 0) {
+        user = await prisma.user.update({
+          where: { telegramId },
+          data: updateData,
+        });
+      }
     }
   } catch (error) {
     console.error('Database error in /start:', error);
-    // Continue even if DB is down, just so the bot responds
   }
 
   const webAppUrl = (process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://vseokkava.vercel.app') + '/card';
 
-  await ctx.reply(`👋 Вітаємо у **VseOkKava**! ☕️\n\nЦе ваша картка лояльності. Натисніть кнопку нижче, щоб відкрити додаток, переглянути баланс та отримати безкоштовну каву!`, {
+  await ctx.reply(`👋 Вітаємо у **VseOkKava**! ☕️\n\nНатисніть кнопку нижче, щоб відкрити додаток.`, {
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [
@@ -56,9 +78,8 @@ bot.command('start', async (ctx) => {
     },
   });
 
-  // If phone is missing and we have user record, ask for it
   if (user && !user.phone) {
-    await ctx.reply('📱 Будь ласка, поділіться номером телефону, щоб ми могли нараховувати вам бонуси.', {
+    await ctx.reply('📱 Поділіться номером телефону для бонусів:', {
       reply_markup: new Keyboard().requestContact('Поділитися контактом').resized().oneTime(),
     });
   }
@@ -76,13 +97,12 @@ bot.on('message:contact', async (ctx) => {
         where: { telegramId },
         data: { phone: contact.phone_number },
       });
-
-      await ctx.reply('✅ Дякуємо! Ваш номер збережено. Тепер ви можете користуватися програмою лояльності.', {
+      await ctx.reply('✅ Номер збережено!', {
         reply_markup: { remove_keyboard: true },
       });
     } catch (error) {
       console.error('Database error in contact handler:', error);
-      await ctx.reply('⚠️ На жаль, сталася помилка при збереженні номера. Спробуйте пізніше.');
+      await ctx.reply('⚠️ Помилка при збереженні. Спробуйте пізніше.');
     }
   }
 });
